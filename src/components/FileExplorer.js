@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
 import { BreadCrumbTrail } from './BreadCrumbTrail';
@@ -86,32 +86,110 @@ export function FileExplorer({ gdrive }) {
     <>
       <BreadCrumbTrail path={path} open={open} />
       {files && (
-        <StyledUnorderedList>
-          {files.map((file, idx) => (
-            <StyledListItem
-              key={file.id}
-              selected={idx === selected}
-              onClick={() => selected !== idx && setSelected(idx)}
-              onDoubleClick={() => open(file)}
-            >
-              {file.name}
-            </StyledListItem>
-          ))}
-          {files.length === 0 && <li style={{color: '#aaa'}}>empty</li>}
-        </StyledUnorderedList>
+        <StyledTable>
+          <colgroup>
+            <col style={{ width: '40%' }} />
+            <col style={{ width: '20%' }} />
+            <col style={{ width: '20%' }} />
+            <col style={{ width: '20%' }} />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Owner</th>
+              <th>Last modified</th>
+              <th>File size</th>
+            </tr>
+          </thead>
+          <tbody>
+            {files.length > 0 ? (
+              files.map((file, idx) => (
+                <File
+                  key={file.id}
+                  file={file}
+                  first={idx === 0}
+                  selected={idx === selected}
+                  onClick={() => selected !== idx && setSelected(idx)}
+                  onDoubleClick={() => open(file)}
+                />
+              ))
+            ) : (
+              <tr>
+                <td style={{ color: 'grey' }}>empty</td>
+              </tr>
+            )}
+          </tbody>
+        </StyledTable>
       )}
     </>
   );
 }
 
-const StyledUnorderedList = styled.ul`
-  padding-left: 10px;
+const StyledTable = styled.table`
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: collapse;
+  text-align: left;
+  user-select: none;
+
+  th,
+  td {
+    padding: 10px 0;
+  }
+  th:first-child {
+    padding-left: 10px;
+  }
+  th,
+  td:not(:first-child) {
+    color: grey;
+  }
+  td:first-child {
+    padding-left: 25px;
+  }
 `;
 
-const StyledListItem = styled.li`
+function File({ file, first, selected, ...rest }) {
+  const selfRef = useRef();
+
+  useEffect(() => {
+    if (selected) {
+      const rect = selfRef.current.getBoundingClientRect();
+      if (first && window.scrollY > 0) {
+        window.scrollTo({ left: window.scrollX, top: 0, behavior: 'smooth' });
+      } else if (rect.top < 0) {
+        scrollBy(rect.top);
+      } else if (rect.bottom > window.innerHeight) {
+        scrollBy(rect.bottom - window.innerHeight);
+      }
+    }
+
+    function scrollBy(offset) {
+      window.scrollBy({ left: 0, top: offset, behavior: 'smooth' });
+    }
+  }, [first, selected]);
+
+  const { iconLink, thumbnailLink, name, owners, modifiedTime, size } = file;
+  return (
+    <StyledTableRow ref={selfRef} selected={selected} {...rest}>
+      <td>
+        <img src={thumbnailLink || iconLink} alt="" />
+        {name}
+      </td>
+      <td>{owners[0].me ? 'me' : owners[0].displayName}</td>
+      <td>{new Date(modifiedTime).toDateString()}</td>
+      <td>{size && size + ' bytes'}</td>
+    </StyledTableRow>
+  );
+}
+
+const StyledTableRow = styled.tr`
   ${props => (props.selected ? 'background-color: #eee;' : '')}
-  padding: 10px;
-  border-top: 1px solid black;
-  line-height: 1.5;
-  user-select: none;
+  border-top: 1px solid #eee;
+
+  img {
+    width: 20px;
+    height: 20px;
+    margin-right: 20px;
+    vertical-align: middle;
+  }
 `;

@@ -29,9 +29,7 @@ export function useGDrive() {
           const authInstance = gapi.auth2.getAuthInstance();
           authInstance.isSignedIn.listen(setIsSignedIn);
           setIsSignedIn(authInstance.isSignedIn.get());
-        },
-        error => console.error('gapi', error)
-      );
+        }).catch(error => console.error('gapi init', error));
   }
 
   // function updateSigninStatus(isSignedIn) {
@@ -46,19 +44,26 @@ export function useGDrive() {
   // }
 
   function signIn() {
-    gapi.auth2.getAuthInstance().signIn();
+    gapi.auth2
+      .getAuthInstance()
+      .signIn()
+      .catch(error => console.error('gapi signin', error));
   }
 
   function signOut() {
-    gapi.auth2.getAuthInstance().signOut();
+    gapi.auth2
+      .getAuthInstance()
+      .signOut()
+      .catch(error => console.error('gapi signout', error));
   }
 
   function listFiles(id, orderBy) {
     return gapi.client.drive.files
       .list({
         q: `"${id}" in parents and trashed = false`,
-        fields: 'nextPageToken, files(id, name, mimeType)',
-        orderBy,
+        fields:
+          'nextPageToken, files(id, mimeType, iconLink, thumbnailLink, name, owners(displayName, me), modifiedTime, size)',
+        orderBy: 'folder, ' + orderBy,
         pageSize: 20,
       })
       .then(response => response.result.files || [])

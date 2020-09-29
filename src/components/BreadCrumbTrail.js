@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 export function BreadCrumbTrail({ path, open }) {
-  function handleDoubleClick(folder) {
+  function handleClick(folder) {
     if (folder !== path[path.length - 1]) {
       open(folder);
     }
@@ -13,7 +13,7 @@ export function BreadCrumbTrail({ path, open }) {
       {path.map((folder, idx) => (
         <StyledListItem
           key={folder.id}
-          onDoubleClick={() => handleDoubleClick(folder)}
+          onClick={() => handleClick(folder)}
         >
           {idx > 0 && <span> &gt; </span>}
           {folder.name}
